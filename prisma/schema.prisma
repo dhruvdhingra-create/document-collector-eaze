@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String            @id @default(uuid())
+  username    String            @unique
+  password    String
+  role        String
+  managerId   String?
+  documents   DocumentRequest[] @relation("CreatedBy")
+  manager     User?             @relation("UserToManager", fields: [managerId], references: [id])
+  teamMembers User[]            @relation("UserToManager")
+}
+
+model DocumentRequest {
+  id          String    @id @default(uuid())
+  name        String
+  phone       String
+  language    String
+  dob         String
+  gender      String
+  isActive    Boolean   @default(true)
+  token       String    @unique @default(uuid())
+  status      String    @default("NOT_UPLOADED")
+  createdAt   DateTime  @default(now())
+  uploadedAt  DateTime?
+  fileName    String?
+  fileType    String?
+  fileSize    Int?
+  filePath    String?
+  createdById String
+  createdBy   User      @relation("CreatedBy", fields: [createdById], references: [id])
+}

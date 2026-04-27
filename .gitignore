@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# env files — keep .env.example, never commit .env
+.env
+.env.local
+.env.*.local
+
+# database
+dev.db
+dev.db-shm
+dev.db-wal
+*.db
+
+# uploads (user files)
+uploads/
+
+# logs
+*.log
+
+# build artifacts
+tsconfig.tsbuildinfo
+
+# OS
+.DS_Store
+
+# Claude local config
+.claude/

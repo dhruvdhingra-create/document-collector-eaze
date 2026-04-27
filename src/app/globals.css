@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Eaze Brand CSS Tokens ─────────────────────────────────────────────────── */
+:root {
+  --color-primary:       #FF9E44;
+  --color-primary-dark:  #552A02;
+  --color-primary-light: #FFF5EC;
+  --color-secondary:     #6F3DD9;
+  --color-sidebar:       #130D21;
+  --color-success:       #33BF30;
+  --color-error:         #D41A23;
+}
+
+@layer base {
+  * { @apply border-gray-200; }
+  body { @apply bg-[#FAFAFA] text-gray-900 antialiased; }
+}
+
+@layer components {
+  /* Primary CTA — Eaze Orange */
+  .btn-primary {
+    @apply bg-[#FF9E44] text-[#552A02] text-sm font-bold rounded-xl px-5 py-2.5
+           hover:bg-[#FFC999] active:scale-[.98] transition-all shadow-sm
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  /* Secondary CTA — Eaze Purple */
+  .btn-secondary {
+    @apply bg-[#6F3DD9] text-white text-sm font-semibold rounded-xl px-5 py-2.5
+           hover:bg-[#5a2fc0] active:scale-[.98] transition-all shadow-sm
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply bg-white text-gray-700 text-sm font-semibold rounded-xl px-5 py-2.5
+           border border-gray-200 hover:bg-gray-50 active:scale-[.98] transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply text-gray-500 text-sm font-medium px-3 py-2 rounded-lg
+           hover:bg-gray-100 hover:text-gray-700 transition-all;
+  }
+
+  /* Input */
+  .input-field {
+    @apply w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white
+           placeholder-gray-400 text-gray-900
+           focus:outline-none focus:ring-2 focus:ring-[#FF9E44] focus:border-[#FF9E44]
+           disabled:bg-gray-50 disabled:text-gray-400 transition-shadow;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+  }
+
+  /* Status badges using Eaze colors */
+  .badge-uploaded {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold
+           bg-[#F1FFF2] text-[#08620D] border border-[#D2FFD4];
+  }
+
+  .badge-dropped {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold
+           bg-[#FFEAEB] text-[#680005] border border-[#FFD6D9];
+  }
+
+  .badge-pending {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold
+           bg-[#FFF5EC] text-[#552A02] border border-[#FFECDB];
+  }
+}

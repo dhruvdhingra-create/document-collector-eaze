@@ -1,2 +1,2 @@
-build: npm run build
+build: npm install && npm run build
 web: npm start

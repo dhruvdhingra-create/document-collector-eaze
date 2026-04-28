@@ -150,18 +150,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 p-4 rounded-xl text-xs space-y-1 border"
-               style={{ background: '#FFF5EC', borderColor: '#FFECDB' }}>
-            <p className="font-bold mb-1" style={{ color: '#552A02' }}>Demo credentials</p>
-            <p style={{ color: '#552A02' }}>
-              Admin: <code className="font-mono font-bold">admin</code> /
-              <code className="font-mono font-bold"> password</code>
-            </p>
-            <p style={{ color: '#552A02' }}>
-              Onboarding Manager: <code className="font-mono font-bold">om1</code> /
-              <code className="font-mono font-bold"> password</code>
-            </p>
-          </div>
         </div>
       </div>
     </div>

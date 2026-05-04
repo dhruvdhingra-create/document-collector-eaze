@@ -16,6 +16,7 @@ export default function DocumentUploadPage({ params }: { params: { token: string
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [fileError, setFileError] = useState('')
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
@@ -30,15 +31,16 @@ export default function DocumentUploadPage({ params }: { params: { token: string
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('')
+    setFileError('')
     const selected = e.target.files?.[0]
     if (!selected) return
     if (!['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(selected.type)) {
-      setError('Only JPG, PNG and PDF files are allowed.')
+      setFileError('Only JPG, PNG and PDF files are allowed.')
       e.target.value = ''
       return
     }
     if (selected.size > 5 * 1024 * 1024) {
-      setError('File size must be 5 MB or below.')
+      setFileError('File too large. Maximum allowed size is 5 MB.')
       e.target.value = ''
       return
     }
@@ -198,6 +200,12 @@ export default function DocumentUploadPage({ params }: { params: { token: string
                 </span>
               ) : 'Submit ID Proof'}
             </button>
+
+            {fileError && (
+              <p className="mt-3 text-xs font-medium text-center" style={{ color: '#FF9499' }}>
+                ⚠ {fileError}
+              </p>
+            )}
           </div>
 
           <p className="text-center mt-7 text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>

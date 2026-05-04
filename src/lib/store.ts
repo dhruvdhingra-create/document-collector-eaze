@@ -2,40 +2,40 @@ import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
 
-// ── MinIO config ────────────────────────────────────────────────────────────
-const MINIO_ENDPOINT  = process.env.MINIO_ENDPOINT   // e.g. minio.myserver.com
-const MINIO_PORT      = parseInt(process.env.MINIO_PORT || '9000')
-const MINIO_USE_SSL   = process.env.MINIO_USE_SSL === 'true'
-const MINIO_ACCESS    = process.env.MINIO_ACCESS_KEY
-const MINIO_SECRET    = process.env.MINIO_SECRET_KEY
-const MINIO_BUCKET    = process.env.MINIO_BUCKET || 'documents'
+// ── S3 / MinIO config ───────────────────────────────────────────────────────
+const S3_ENDPOINT  = process.env.S3_ENDPOINT   // e.g. minio.myserver.com
+const S3_PORT      = parseInt(process.env.S3_PORT || '9000')
+const S3_USE_SSL   = process.env.S3_USE_SSL === 'true'
+const S3_ACCESS    = process.env.S3_ACCESS_KEY
+const S3_SECRET    = process.env.S3_SECRET_KEY
+const S3_BUCKET    = process.env.S3_BUCKET || 'documents'
 
-const USE_MINIO = !!(MINIO_ENDPOINT && MINIO_ACCESS && MINIO_SECRET)
+const USE_S3 = !!(S3_ENDPOINT && S3_ACCESS && S3_SECRET)
 
-// ── MinIO client (lazy) ─────────────────────────────────────────────────────
-let _minioClient: any = null
-function getMinioClient() {
-  if (_minioClient) return _minioClient
+// ── S3 client (lazy) ────────────────────────────────────────────────────────
+let _s3Client: any = null
+function getS3Client() {
+  if (_s3Client) return _s3Client
   const { Client } = require('minio')
-  _minioClient = new Client({
-    endPoint:  MINIO_ENDPOINT,
-    port:      MINIO_PORT,
-    useSSL:    MINIO_USE_SSL,
-    accessKey: MINIO_ACCESS,
-    secretKey: MINIO_SECRET,
+  _s3Client = new Client({
+    endPoint:  S3_ENDPOINT,
+    port:      S3_PORT,
+    useSSL:    S3_USE_SSL,
+    accessKey: S3_ACCESS,
+    secretKey: S3_SECRET,
   })
-  return _minioClient
+  return _s3Client
 }
 
 async function ensureBucket() {
-  const client = getMinioClient()
-  const exists = await client.bucketExists(MINIO_BUCKET)
-  if (!exists) await client.makeBucket(MINIO_BUCKET)
+  const client = getS3Client()
+  const exists = await client.bucketExists(S3_BUCKET)
+  if (!exists) await client.makeBucket(S3_BUCKET)
 }
 
 // ── Local fallback ──────────────────────────────────────────────────────────
 const LOCAL_UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
-if (!USE_MINIO && !fs.existsSync(LOCAL_UPLOAD_DIR)) {
+if (!USE_S3 && !fs.existsSync(LOCAL_UPLOAD_DIR)) {
   fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true })
 }
 
@@ -46,12 +46,12 @@ export async function saveFile(file: File): Promise<string> {
   const objectName = `${randomUUID()}${ext}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
-  if (USE_MINIO) {
+  if (USE_S3) {
     await ensureBucket()
-    await getMinioClient().putObject(MINIO_BUCKET, objectName, buffer, buffer.length, {
+    await getS3Client().putObject(S3_BUCKET, objectName, buffer, buffer.length, {
       'Content-Type': file.type,
     })
-    return objectName  // stored as object name; bucket is fixed
+    return objectName
   }
 
   const filePath = path.join(LOCAL_UPLOAD_DIR, objectName)
@@ -60,11 +60,11 @@ export async function saveFile(file: File): Promise<string> {
 }
 
 export async function getFileBuffer(filePath: string): Promise<Buffer> {
-  if (USE_MINIO) {
-    const client = getMinioClient()
+  if (USE_S3) {
+    const client = getS3Client()
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = []
-      client.getObject(MINIO_BUCKET, filePath, (err: any, stream: any) => {
+      client.getObject(S3_BUCKET, filePath, (err: any, stream: any) => {
         if (err) return reject(new Error('File not found'))
         stream.on('data', (chunk: Buffer) => chunks.push(chunk))
         stream.on('end', () => resolve(Buffer.concat(chunks)))
@@ -78,8 +78,8 @@ export async function getFileBuffer(filePath: string): Promise<Buffer> {
 }
 
 export async function deleteFile(filePath: string) {
-  if (USE_MINIO) {
-    await getMinioClient().removeObject(MINIO_BUCKET, filePath).catch(() => {})
+  if (USE_S3) {
+    await getS3Client().removeObject(S3_BUCKET, filePath).catch(() => {})
     return
   }
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath)

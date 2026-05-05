@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
 
-// ── S3 / MinIO config ───────────────────────────────────────────────────────
-const S3_ENDPOINT  = process.env.S3_ENDPOINT   // e.g. minio.myserver.com
-const S3_PORT      = parseInt(process.env.S3_PORT || '9000')
-const S3_USE_SSL   = process.env.S3_USE_SSL === 'true'
+// ── S3 config ───────────────────────────────────────────────────────────────
+const S3_REGION    = process.env.S3_REGION    || 'ap-south-1'
+const S3_ENDPOINT  = process.env.S3_ENDPOINT  // e.g. s3.ap-south-1.amazonaws.com
 const S3_ACCESS    = process.env.S3_ACCESS_KEY
 const S3_SECRET    = process.env.S3_SECRET_KEY
-const S3_BUCKET    = process.env.S3_BUCKET || 'documents'
+const S3_BUCKET    = process.env.S3_BUCKET    || 'documents'
+const S3_PREFIX    = process.env.S3_PREFIX    // e.g. "staging" — folder inside bucket
 
 const USE_S3 = !!(S3_ENDPOINT && S3_ACCESS && S3_SECRET)
 
@@ -16,21 +16,18 @@ const USE_S3 = !!(S3_ENDPOINT && S3_ACCESS && S3_SECRET)
 let _s3Client: any = null
 function getS3Client() {
   if (_s3Client) return _s3Client
-  const { Client } = require('minio')
-  _s3Client = new Client({
-    endPoint:  S3_ENDPOINT,
-    port:      S3_PORT,
-    useSSL:    S3_USE_SSL,
-    accessKey: S3_ACCESS,
-    secretKey: S3_SECRET,
+  const { S3Client } = require('@aws-sdk/client-s3')
+  _s3Client = new S3Client({
+    region: S3_REGION,
+    endpoint: `https://${S3_ENDPOINT}`,
+    credentials: { accessKeyId: S3_ACCESS!, secretAccessKey: S3_SECRET! },
+    forcePathStyle: false,
   })
   return _s3Client
 }
 
-async function ensureBucket() {
-  const client = getS3Client()
-  const exists = await client.bucketExists(S3_BUCKET)
-  if (!exists) await client.makeBucket(S3_BUCKET)
+function s3Key(objectName: string) {
+  return S3_PREFIX ? `${S3_PREFIX}/${objectName}` : objectName
 }
 
 // ── Local fallback ──────────────────────────────────────────────────────────
@@ -47,11 +44,14 @@ export async function saveFile(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer())
 
   if (USE_S3) {
-    await ensureBucket()
-    await getS3Client().putObject(S3_BUCKET, objectName, buffer, buffer.length, {
-      'Content-Type': file.type,
-    })
-    return objectName
+    const { PutObjectCommand } = require('@aws-sdk/client-s3')
+    await getS3Client().send(new PutObjectCommand({
+      Bucket:      S3_BUCKET,
+      Key:         s3Key(objectName),
+      Body:        buffer,
+      ContentType: file.type,
+    }))
+    return objectName  // store only the object name; prefix is applied at runtime
   }
 
   const filePath = path.join(LOCAL_UPLOAD_DIR, objectName)
@@ -61,16 +61,14 @@ export async function saveFile(file: File): Promise<string> {
 
 export async function getFileBuffer(filePath: string): Promise<Buffer> {
   if (USE_S3) {
-    const client = getS3Client()
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = []
-      client.getObject(S3_BUCKET, filePath, (err: any, stream: any) => {
-        if (err) return reject(new Error('File not found'))
-        stream.on('data', (chunk: Buffer) => chunks.push(chunk))
-        stream.on('end', () => resolve(Buffer.concat(chunks)))
-        stream.on('error', reject)
-      })
-    })
+    const { GetObjectCommand } = require('@aws-sdk/client-s3')
+    const res = await getS3Client().send(new GetObjectCommand({
+      Bucket: S3_BUCKET,
+      Key:    s3Key(filePath),
+    }))
+    const chunks: Uint8Array[] = []
+    for await (const chunk of res.Body as any) chunks.push(chunk)
+    return Buffer.concat(chunks)
   }
 
   if (!fs.existsSync(filePath)) throw new Error('File not found')
@@ -79,7 +77,11 @@ export async function getFileBuffer(filePath: string): Promise<Buffer> {
 
 export async function deleteFile(filePath: string) {
   if (USE_S3) {
-    await getS3Client().removeObject(S3_BUCKET, filePath).catch(() => {})
+    const { DeleteObjectCommand } = require('@aws-sdk/client-s3')
+    await getS3Client().send(new DeleteObjectCommand({
+      Bucket: S3_BUCKET,
+      Key:    s3Key(filePath),
+    })).catch(() => {})
     return
   }
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath)

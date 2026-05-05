@@ -34,8 +34,8 @@ export async function POST(request: Request) {
     }).where(eq(documentRequests.id, docReq.id))
 
     return NextResponse.json({ success: true })
-  } catch (err) {
-    console.error('Upload error:', err)
+  } catch (err: any) {
+    console.error('[upload] Error:', err?.message || err, err?.stack)
     return NextResponse.json({ error: 'Server Error' }, { status: 500 })
   }
 }

@@ -10,7 +10,8 @@ const S3_SECRET    = process.env.S3_SECRET_KEY
 const S3_BUCKET    = process.env.S3_BUCKET    || 'documents'
 const S3_PREFIX    = process.env.S3_PREFIX    // e.g. "staging" — folder inside bucket
 
-const USE_S3 = !!(S3_ENDPOINT && S3_ACCESS && S3_SECRET)
+// S3_ENDPOINT is optional — omit for standard AWS S3, set for custom endpoints (MinIO etc.)
+const USE_S3 = !!(S3_ACCESS && S3_SECRET)
 
 // ── S3 client (lazy) ────────────────────────────────────────────────────────
 let _s3Client: any = null
@@ -19,9 +20,8 @@ function getS3Client() {
   const { S3Client } = require('@aws-sdk/client-s3')
   _s3Client = new S3Client({
     region: S3_REGION,
-    endpoint: `https://${S3_ENDPOINT}`,
+    ...(S3_ENDPOINT ? { endpoint: `https://${S3_ENDPOINT}`, forcePathStyle: true } : {}),
     credentials: { accessKeyId: S3_ACCESS!, secretAccessKey: S3_SECRET! },
-    forcePathStyle: false,
   })
   return _s3Client
 }

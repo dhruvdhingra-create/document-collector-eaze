@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { AlertCircle, CheckCircle, UploadCloud } from 'lucide-react'
 
 function EazeSwirl() {
@@ -72,7 +73,8 @@ function FileZone({
   )
 }
 
-export default function DocumentUploadPage({ params }: { params: { token: string } }) {
+export default function DocumentUploadPage() {
+  const { token: paramToken } = useParams() as { token: string }
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [file1, setFile1] = useState<File | null>(null)
@@ -84,14 +86,14 @@ export default function DocumentUploadPage({ params }: { params: { token: string
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/upload/verify?token=${params.token}`)
+    fetch(`/api/upload/verify?token=${paramToken}`)
       .then((r) => r.json())
       .then((r) => {
         if (r.success) setData(r.data)
         else setError(r.error || 'Invalid Link')
         setLoading(false)
       })
-  }, [params.token])
+  }, [paramToken])
 
   const handleSubmit = async () => {
     if (!file1 || !file2) return
@@ -100,7 +102,7 @@ export default function DocumentUploadPage({ params }: { params: { token: string
     const fd = new FormData()
     fd.append('file',  file1)
     fd.append('file2', file2)
-    fd.append('token', params.token)
+    fd.append('token', paramToken)
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
       if (res.ok) setSuccess(true)

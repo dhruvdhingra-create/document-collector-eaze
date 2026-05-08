@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
@@ -25,18 +25,19 @@ function FileViewer({ id, doc, fileType }: { id: string; doc: '1' | '2'; fileTyp
   )
 }
 
-export default function AdminFileView({ params }: { params: { id: string } }) {
+export default function AdminFileView() {
   const router = useRouter()
+  const { id: paramId } = useParams() as { id: string }
   const [data, setData] = useState<DocData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [activeDoc, setActiveDoc] = useState<'1' | '2'>('1')
 
   useEffect(() => {
-    fetch(`/api/requests/${params.id}`)
+    fetch(`/api/requests/${paramId}`)
       .then((r) => r.json())
       .then((r) => { if (r.success) setData(r.data); setLoading(false) })
-  }, [params.id])
+  }, [paramId])
 
   const handleFreshLink = async () => {
     if (!confirm('Create a fresh link? This will invalidate the current link.')) return
@@ -44,7 +45,7 @@ export default function AdminFileView({ params }: { params: { id: string } }) {
     const res = await fetch('/api/requests/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requestId: params.id }),
+      body: JSON.stringify({ requestId: paramId }),
     })
     if (res.ok) router.push('/dashboard/admin')
     else { alert('Failed to create fresh link'); setRefreshing(false) }

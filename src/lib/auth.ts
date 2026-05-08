@@ -28,17 +28,19 @@ function verifyValue(signed: string): string | null {
 export async function setSession(userId: string, role: string) {
   const payload = Buffer.from(JSON.stringify({ userId, role })).toString('base64url')
   const signed = signValue(payload)
-  cookies().set(COOKIE_NAME, signed, {
+  const jar = await cookies()
+  jar.set(COOKIE_NAME, signed, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7,
   })
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
-  const signed = cookies().get(COOKIE_NAME)?.value
+  const jar = await cookies()
+  const signed = jar.get(COOKIE_NAME)?.value
   if (!signed) return null
 
   const verified = verifyValue(signed)
@@ -52,5 +54,6 @@ export async function getSession(): Promise<SessionPayload | null> {
 }
 
 export async function clearSession() {
-  cookies().delete(COOKIE_NAME)
+  const jar = await cookies()
+  jar.delete(COOKIE_NAME)
 }

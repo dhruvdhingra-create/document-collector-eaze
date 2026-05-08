@@ -27,6 +27,10 @@ export const documentRequests = pgTable('document_requests', {
   fileType: text('file_type'),
   fileSize: integer('file_size'),
   filePath: text('file_path'),
+  file2Name: text('file2_name'),
+  file2Type: text('file2_type'),
+  file2Size: integer('file2_size'),
+  file2Path: text('file2_path'),
   createdById: uuid('created_by_id').references(() => users.id).notNull(),
 })
 

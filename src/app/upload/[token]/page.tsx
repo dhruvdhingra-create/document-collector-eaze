@@ -9,14 +9,78 @@ function EazeSwirl() {
 
 const BG = 'min-h-[100dvh] flex items-center justify-center p-4'
 const BG_STYLE = { background: '#130D21' }
+const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+const MAX_SIZE = 5 * 1024 * 1024
+
+function FileZone({
+  label, file, inputId, onChange, disabled,
+}: {
+  label: string; file: File | null; inputId: string
+  onChange: (f: File | null, err: string) => void; disabled: boolean
+}) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0]
+    if (!selected) return
+    if (!VALID_TYPES.includes(selected.type)) {
+      onChange(null, 'Only JPG, PNG and PDF files are allowed.')
+      e.target.value = ''
+      return
+    }
+    if (selected.size > MAX_SIZE) {
+      onChange(null, 'File too large. Maximum allowed size is 5 MB.')
+      e.target.value = ''
+      return
+    }
+    onChange(selected, '')
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</p>
+      <div
+        className="relative rounded-2xl p-5 text-center transition-all duration-300 group cursor-pointer"
+        style={{ border: '1.5px dashed rgba(255,158,68,0.25)', background: 'rgba(255,158,68,0.04)' }}
+        onClick={() => document.getElementById(inputId)?.click()}
+      >
+        <input id={inputId} type="file" className="hidden" accept=".jpg,.jpeg,.png,.pdf"
+               onChange={handleChange} disabled={disabled} />
+
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2"
+             style={{ background: 'rgba(255,158,68,0.12)', border: '1px solid rgba(255,158,68,0.2)' }}>
+          <UploadCloud className="w-5 h-5" style={{ color: '#FF9E44' }} strokeWidth={1.5} />
+        </div>
+
+        {file ? (
+          <div>
+            <p className="text-xs font-semibold text-white truncate px-1">{file.name}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {(file.size / 1024 / 1024).toFixed(1)} MB ·{' '}
+              <label htmlFor={inputId} className="font-semibold cursor-pointer" style={{ color: '#FF9E44' }}
+                     onClick={(e) => e.stopPropagation()}>
+                Replace
+              </label>
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs font-semibold text-white mb-0.5">Tap to select</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>JPG, PNG or PDF · max 5 MB</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function DocumentUploadPage({ params }: { params: { token: string } }) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [file, setFile] = useState<File | null>(null)
+  const [file1, setFile1] = useState<File | null>(null)
+  const [file2, setFile2] = useState<File | null>(null)
+  const [err1, setErr1] = useState('')
+  const [err2, setErr2] = useState('')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
-  const [fileError, setFileError] = useState('')
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
@@ -29,35 +93,21 @@ export default function DocumentUploadPage({ params }: { params: { token: string
       })
   }, [params.token])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError('')
-    setFileError('')
-    const selected = e.target.files?.[0]
-    if (!selected) return
-    if (!['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(selected.type)) {
-      setFileError('Only JPG, PNG and PDF files are allowed.')
-      e.target.value = ''
-      return
-    }
-    if (selected.size > 5 * 1024 * 1024) {
-      setFileError('File too large. Maximum allowed size is 5 MB.')
-      e.target.value = ''
-      return
-    }
-    setFile(selected)
-  }
-
   const handleSubmit = async () => {
-    if (!file) return
+    if (!file1 || !file2) return
     setUploading(true)
     setError('')
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file',  file1)
+    fd.append('file2', file2)
     fd.append('token', params.token)
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
       if (res.ok) setSuccess(true)
-      else setError('Upload failed. Please try again.')
+      else {
+        const data = await res.json()
+        setError(data.error || 'Upload failed. Please try again.')
+      }
     } catch {
       setError('Upload failed due to a network issue. Please try again.')
     } finally {
@@ -110,22 +160,23 @@ export default function DocumentUploadPage({ params }: { params: { token: string
           </div>
           <h2 className="text-lg font-bold text-white mb-2">Upload Successful!</h2>
           <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Your ID proof has been submitted successfully.<br />Thank you!
+            Your documents have been submitted successfully.<br />Thank you!
           </p>
         </div>
       </div>
     )
   }
 
+  const canSubmit = !!(file1 && file2 && !err1 && !err2)
+
   /* ── Upload form ── */
   return (
     <div className="min-h-[100dvh] flex flex-col font-sans" style={BG_STYLE}>
-      {/* Orange glow */}
       <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-10"
            style={{ background: '#FF9E44', transform: 'translate(30%, -30%)' }} />
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 relative z-10">
-        <div className="w-full max-w-[360px]">
+        <div className="w-full max-w-[380px]">
 
           {/* Brand header */}
           <div className="text-center mb-7">
@@ -148,47 +199,22 @@ export default function DocumentUploadPage({ params }: { params: { token: string
               </div>
             )}
 
-            {/* Drop zone */}
-            <div className="relative rounded-2xl p-8 text-center transition-all duration-300 group cursor-pointer"
-                 style={{ border: '1.5px dashed rgba(255,158,68,0.25)', background: 'rgba(255,158,68,0.04)' }}
-                 onClick={() => document.getElementById('fu')?.click()}>
+            <div className="space-y-4">
+              <FileZone label="Document 1" file={file1} inputId="fu1" disabled={uploading}
+                onChange={(f, e) => { setFile1(f); setErr1(e) }} />
+              {err1 && <p className="text-xs font-medium" style={{ color: '#FF9499' }}>⚠ {err1}</p>}
 
-              <input id="fu" type="file" className="hidden" accept=".jpg,.jpeg,.png,.pdf"
-                     onChange={handleFileChange} disabled={uploading} />
-
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-105"
-                   style={{ background: 'rgba(255,158,68,0.12)', border: '1px solid rgba(255,158,68,0.2)' }}>
-                <UploadCloud className="w-7 h-7" style={{ color: '#FF9E44' }} strokeWidth={1.5} />
-              </div>
-
-              {file ? (
-                <p className="text-sm font-semibold text-white truncate px-2">{file.name}</p>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-white mb-1">Tap to select a file</p>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>JPG, PNG or PDF · max 5 MB</p>
-                </>
-              )}
+              <FileZone label="Document 2" file={file2} inputId="fu2" disabled={uploading}
+                onChange={(f, e) => { setFile2(f); setErr2(e) }} />
+              {err2 && <p className="text-xs font-medium" style={{ color: '#FF9499' }}>⚠ {err2}</p>}
             </div>
-
-            {file && (
-              <div className="mt-4 flex justify-between items-center px-1">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  {(file.size / 1024 / 1024).toFixed(1)} MB
-                </span>
-                <label htmlFor="fu" className="text-xs font-semibold cursor-pointer transition-colors"
-                       style={{ color: '#FF9E44' }}>
-                  Replace file
-                </label>
-              </div>
-            )}
 
             <button
               onClick={handleSubmit}
-              disabled={!file || uploading}
+              disabled={!canSubmit || uploading}
               className="w-full mt-6 h-14 rounded-2xl text-base font-bold transition-all duration-300 flex items-center justify-center active:scale-[.98]"
               style={
-                !file || uploading
+                !canSubmit || uploading
                   ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.2)', cursor: 'not-allowed' }
                   : { background: '#FF9E44', color: '#552A02', boxShadow: '0 4px 24px rgba(255,158,68,0.3)' }
               }
@@ -198,14 +224,8 @@ export default function DocumentUploadPage({ params }: { params: { token: string
                   <span className="w-5 h-5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
                   Uploading…
                 </span>
-              ) : 'Submit ID Proof'}
+              ) : 'Submit Documents'}
             </button>
-
-            {fileError && (
-              <p className="mt-3 text-xs font-medium text-center" style={{ color: '#FF9499' }}>
-                ⚠ {fileError}
-              </p>
-            )}
           </div>
 
           <p className="text-center mt-7 text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>

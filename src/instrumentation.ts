@@ -92,6 +92,12 @@ export async function register() {
           CREATE INDEX IF NOT EXISTS idx_doc_requests_status     ON document_requests(status);
           CREATE INDEX IF NOT EXISTS idx_users_manager           ON users(manager_id);
         `)
+        await client.query(`
+          ALTER TABLE document_requests ADD COLUMN IF NOT EXISTS file2_name TEXT;
+          ALTER TABLE document_requests ADD COLUMN IF NOT EXISTS file2_type TEXT;
+          ALTER TABLE document_requests ADD COLUMN IF NOT EXISTS file2_size INTEGER;
+          ALTER TABLE document_requests ADD COLUMN IF NOT EXISTS file2_path TEXT;
+        `)
         await client.query('COMMIT')
         console.log('[db] PostgreSQL tables ready')
       } catch (err) {

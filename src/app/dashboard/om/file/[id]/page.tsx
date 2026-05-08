@@ -9,7 +9,24 @@ import { format } from 'date-fns'
 type DocData = {
   id: string; name: string; phone: string; language: string
   dob: string; gender: string; createdAt: string; uploadedAt: string | null
-  fileType: string | null
+  fileType: string | null; file2Type: string | null
+}
+
+function FileViewer({ id, doc, fileType }: { id: string; doc: '1' | '2'; fileType: string | null }) {
+  const src = `/api/upload?id=${id}&doc=${doc}`
+  if (!fileType) return (
+    <div className="flex items-center justify-center h-48 text-gray-400 text-sm">No file uploaded</div>
+  )
+  return fileType.includes('pdf') ? (
+    <embed src={`${src}#toolbar=0&navpanes=0&scrollbar=1`} type="application/pdf"
+           className="w-full h-[600px] rounded-lg border border-gray-100" />
+  ) : (
+    <img src={src} alt={`Document ${doc}`}
+         draggable={false}
+         onContextMenu={(e) => e.preventDefault()}
+         className="max-w-full max-h-[600px] rounded-xl shadow-sm object-contain select-none"
+         style={{ WebkitUserDrag: 'none' } as React.CSSProperties} />
+  )
 }
 
 export default function OMFileView({ params }: { params: { id: string } }) {
@@ -17,6 +34,7 @@ export default function OMFileView({ params }: { params: { id: string } }) {
   const [data, setData] = useState<DocData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [activeDoc, setActiveDoc] = useState<'1' | '2'>('1')
 
   useEffect(() => {
     fetch(`/api/requests/${params.id}`)
@@ -58,6 +76,8 @@ export default function OMFileView({ params }: { params: { id: string } }) {
     ...(data.uploadedAt ? [{ label: 'Uploaded At', value: format(new Date(data.uploadedAt), 'dd MMM yyyy, h:mm a') }] : []),
   ]
 
+  const activeFileType = activeDoc === '1' ? data.fileType : data.file2Type
+
   return (
     <DashboardLayout role="OM" title="Onboarding Manager">
       <div className="flex items-center justify-between mb-6">
@@ -89,19 +109,26 @@ export default function OMFileView({ params }: { params: { id: string } }) {
           </dl>
         </div>
 
-        <div className="md:col-span-2 card p-5 flex flex-col items-center justify-center min-h-[400px]">
-          {data.fileType?.includes('pdf') ? (
-            /* #toolbar=0&navpanes=0 hides Chrome's native PDF download/print toolbar */
-            <embed src={`/api/upload?id=${data.id}#toolbar=0&navpanes=0&scrollbar=1`}
-                   type="application/pdf"
-                   className="w-full h-[600px] rounded-lg border border-gray-100" />
-          ) : (
-            <img src={`/api/upload?id=${data.id}`} alt="ID Proof"
-                 draggable={false}
-                 onContextMenu={(e) => e.preventDefault()}
-                 className="max-w-full max-h-[600px] rounded-xl shadow-sm object-contain select-none"
-                 style={{ WebkitUserDrag: 'none' } as React.CSSProperties} />
-          )}
+        <div className="md:col-span-2 card p-5 flex flex-col min-h-[400px]">
+          {/* Tabs */}
+          <div className="flex gap-2 mb-4">
+            {(['1', '2'] as const).map((doc) => (
+              <button
+                key={doc}
+                onClick={() => setActiveDoc(doc)}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold transition-all"
+                style={activeDoc === doc
+                  ? { background: 'rgba(255,158,68,0.15)', color: '#FF9E44', border: '1px solid rgba(255,158,68,0.3)' }
+                  : { background: 'transparent', color: '#9CA3AF', border: '1px solid #E5E7EB' }}
+              >
+                Document {doc}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 flex items-center justify-center">
+            <FileViewer id={data.id} doc={activeDoc} fileType={activeFileType} />
+          </div>
         </div>
       </div>
     </DashboardLayout>

@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    serverComponentsExternalPackages: ['pg', 'bcryptjs', 'better-sqlite3', '@aws-sdk/client-s3'],
-    instrumentationHook: true,
-  },
+  serverExternalPackages: ['pg', 'bcryptjs', 'better-sqlite3', '@aws-sdk/client-s3'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = [

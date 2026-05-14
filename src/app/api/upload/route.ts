@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     const asDownload = url.searchParams.get('download') === 'true'
 
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
-    if (asDownload && session.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (asDownload && session.role !== 'ADMIN' && session.role !== 'OM') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
     const db = getDb()
     const [docReq] = await db.select().from(documentRequests).where(eq(documentRequests.id, id)).limit(1)
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': fileType ?? 'application/octet-stream',
-        'Content-Disposition': (asDownload && session.role === 'ADMIN')
+        'Content-Disposition': (asDownload && (session.role === 'ADMIN' || session.role === 'OM'))
           ? `attachment; filename="${fileName}"`
           : `inline; filename="${fileName}"`,
       },

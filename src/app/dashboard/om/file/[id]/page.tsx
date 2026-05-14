@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
-import { ArrowLeft, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 
 type DocData = {
@@ -86,15 +86,24 @@ export default function OMFileView() {
                 style={{ color: '#552A02' }}>
           <ArrowLeft size={15} /> Back to list
         </button>
-        <button
-          onClick={handleFreshLink}
-          disabled={refreshing}
-          className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl transition-all disabled:opacity-50"
-          style={{ color: '#FF9E44', background: 'rgba(255,158,68,0.1)' }}
-        >
-          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-          {refreshing ? 'Creating…' : 'Fresh Link'}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/upload?id=${data.id}&doc=${activeDoc}&download=true`}
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl transition-all"
+            style={{ color: '#6F3DD9', background: 'rgba(111,61,217,0.08)' }}
+          >
+            <Download size={14} /> Download Doc {activeDoc}
+          </a>
+          <button
+            onClick={handleFreshLink}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl transition-all disabled:opacity-50"
+            style={{ color: '#FF9E44', background: 'rgba(255,158,68,0.1)' }}
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            {refreshing ? 'Creating…' : 'Fresh Link'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

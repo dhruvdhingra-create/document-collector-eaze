@@ -110,8 +110,9 @@ export default function DocumentUploadPage() {
         const data = await res.json()
         setError(data.error || 'Upload failed. Please try again.')
       }
-    } catch {
-      setError('Upload failed due to a network issue. Please try again.')
+    } catch (err: any) {
+      console.error('[upload] fetch error:', err)
+      setError(`Upload failed: ${err?.message || 'network error'}. Please try again.`)
     } finally {
       setUploading(false)
     }

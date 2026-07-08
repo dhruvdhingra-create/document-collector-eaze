@@ -81,7 +81,7 @@ export default function CreateRequestForm({ onSuccess }: { onSuccess: () => void
         <div>
           <label className="block text-xs font-bold text-gray-600 mb-1">Language</label>
           <select className="input-field text-sm" value={form.language} onChange={set('language')} disabled={loading}>
-            {['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Malayalam', 'Odia', 'Bengali'].map((l) => <option key={l}>{l}</option>)}
+            {['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Malayalam', 'Odia', 'Bengali', 'Gujarati', 'Marathi'].map((l) => <option key={l}>{l}</option>)}
           </select>
         </div>
 
